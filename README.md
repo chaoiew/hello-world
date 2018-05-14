@@ -9,3 +9,4 @@ https://github.com/jkgeekJack/swagger2-springmvc-example
       http://blog.csdn.net/w4hechuan2009/article/details/68892718
       https://github.com/wkennedy/swagger4spring-web
       https://blog.csdn.net/xjj1314/article/details/78192398
+https://blog.csdn.net/xyw591238/article/details/51939111
