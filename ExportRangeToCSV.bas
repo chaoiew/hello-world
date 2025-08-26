@@ -1,64 +1,32 @@
-Sub ExportA9ToBQ210ToCSV()
-    Dim dataRange As Range
-    Dim csvFilePath As String
-    Dim fso As Object, txtFile As Object
-    Dim rowNum As Long, colNum As Long
-    Dim dataRow As String
+Sub BatchConvertToUTF8NoBOM()
+    Dim objShell As Object
+    Dim strCommand As String
+    Dim strFileExt As String
+    Dim strFolderPath As String
+    Dim blnRecursive As Boolean
     
-    ' 设置要导出的单元格范围：A9到BQ210
-    On Error Resume Next
-    Set dataRange = ThisWorkbook.ActiveSheet.Range("A9:BQ210")
-    On Error GoTo 0
+    ' 配置转换参数
+    strFileExt = "*.csv" ' 要转换的文件类型，如 *.txt, *.html 等
+    strFolderPath = "C:\Your\Target\Folder" ' 目标文件夹路径
+    blnRecursive = True ' 是否递归处理子目录 (True/False)
     
-    ' 检查范围是否有效
-    If dataRange Is Nothing Then
-        MsgBox "指定的单元格范围无效，请检查工作表是否存在", vbExclamation
-        Exit Sub
+    ' 创建Shell对象
+    Set objShell = CreateObject("WScript.Shell")
+    
+    ' 构建PowerShell命令
+    If blnRecursive Then
+        ' 递归处理子目录
+        strCommand = "powershell -Command ""Get-ChildItem -Path '" & strFolderPath & "' -Filter '" & strFileExt & "' -Recurse | ForEach-Object { $content = Get-Content $_.FullName; Set-Content -Path $_.FullName -Value $content -Encoding UTF8NoBOM }"""
+    Else
+        ' 仅处理当前目录
+        strCommand = "powershell -Command ""Get-ChildItem -Path '" & strFolderPath & "' -Filter '" & strFileExt & "' | ForEach-Object { $content = Get-Content $_.FullName; Set-Content -Path $_.FullName -Value $content -Encoding UTF8NoBOM }"""
     End If
     
-    ' 检查范围内是否有数据
-    If Application.CountA(dataRange) = 0 Then
-        MsgBox "指定范围内没有数据", vbInformation
-        Exit Sub
-    End If
+    ' 执行命令（隐藏窗口执行）
+    objShell.Run strCommand, 0, True
     
-    ' 获取保存路径
-    csvFilePath = Application.GetSaveAsFilename( _
-        FileFilter:="CSV文件 (*.csv), *.csv", _
-        Title:="保存CSV文件")
+    ' 释放对象
+    Set objShell = Nothing
     
-    ' 取消操作
-    If csvFilePath = "False" Then Exit Sub
-    
-    ' 创建文件系统对象
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    Set txtFile = fso.CreateTextFile(csvFilePath, True, True) ' 使用UTF-8编码
-    
-    ' 遍历指定区域并写入CSV
-    For rowNum = 1 To dataRange.Rows.Count
-        dataRow = ""
-        For colNum = 1 To dataRange.Columns.Count
-            ' 处理包含逗号的内容，用双引号包裹
-            If InStr(1, dataRange.Cells(rowNum, colNum).Value, ",") > 0 Then
-                dataRow = dataRow & """" & Replace(dataRange.Cells(rowNum, colNum).Value, """", """""") & """"
-            Else
-                dataRow = dataRow & dataRange.Cells(rowNum, colNum).Value
-            End If
-            
-            ' 添加逗号分隔（最后一列不加）
-            If colNum < dataRange.Columns.Count Then
-                dataRow = dataRow & ","
-            End If
-        Next colNum
-        
-        ' 写入一行数据
-        txtFile.WriteLine dataRow
-    Next rowNum
-    
-    ' 清理对象
-    txtFile.Close
-    Set txtFile = Nothing
-    Set fso = Nothing
-    
-    MsgBox "数据已成功导出到：" & vbCrLf & csvFilePath, vbInformation
+    MsgBox "文件编码转换完成！", vbInformation, "提示"
 End Sub
